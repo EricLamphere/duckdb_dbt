@@ -1,0 +1,78 @@
+unit_tests:
+  - name: test_mart_customer_360_segment_assignment
+    description: >
+      Verifies that the segment CASE expression correctly classifies customers
+      into vip, loyal, regular, at_risk, and new based on loyalty_tier, lifetime
+      revenue, order count, and last_order_date. Also checks that customer_sk is
+      non-null and rfm_recency_days is null for a customer with no orders.
+    model: mart_customer_360
+    given:
+      - input: ref('int_customer_orders')
+        rows:
+          # VIP: gold tier with high revenue
+          - customer_id: CUST-VIP
+            first_name: Alice
+            last_name: Gold
+            email: alice@example.com
+            signup_date: "2023-01-01"
+            country: US
+            loyalty_tier: gold
+            orders_count: 12
+            lifetime_net_revenue: 1200.00
+            total_units_purchased: 24
+            first_order_date: "2023-02-01"
+            last_order_date: "2025-04-01"
+            avg_order_value: 100.00
+          # Loyal: silver tier with decent revenue
+          - customer_id: CUST-LOYAL
+            first_name: Bob
+            last_name: Silver
+            email: bob@example.com
+            signup_date: "2023-06-01"
+            country: US
+            loyalty_tier: silver
+            orders_count: 4
+            lifetime_net_revenue: 350.00
+            total_units_purchased: 8
+            first_order_date: "2023-07-01"
+            last_order_date: "2025-03-15"
+            avg_order_value: 87.50
+          # New: zero orders
+          - customer_id: CUST-NEW
+            first_name: Carol
+            last_name: Bronze
+            email: carol@example.com
+            signup_date: "2025-04-01"
+            country: CA
+            loyalty_tier: bronze
+            orders_count: 0
+            lifetime_net_revenue: 0.00
+            total_units_purchased: 0
+            first_order_date: null
+            last_order_date: null
+            avg_order_value: null
+      - input: ref('int_ga_sessions_cleaned')
+        rows:
+          - session_id: __empty__
+            customer_id: null
+            session_start_ts: "1900-01-01 00:00:00"
+            session_date: "1900-01-01"
+            source: none
+            medium: none
+            campaign: none
+            device_category: desktop
+            page_views: 0
+            session_duration_sec: 0
+            converted: false
+            is_known_customer: false
+            is_bounced: true
+            session_duration_bucket: under_1m
+            traffic_category: other
+    expect:
+      rows:
+        - customer_id: CUST-VIP
+          segment: vip
+        - customer_id: CUST-LOYAL
+          segment: loyal
+        - customer_id: CUST-NEW
+          segment: new

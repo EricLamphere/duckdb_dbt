@@ -1,0 +1,158 @@
+unit_tests:
+  - name: test_int_sales_enriched_net_and_margin
+    description: >
+      Verifies that net_amount_dollars and gross_margin_dollars are calculated
+      correctly from quantity, unit_price, discount, and cost. Also checks that
+      fiscal_quarter is correctly assigned for orders in the first fiscal quarter
+      (February start).
+    model: int_sales_enriched
+    overrides:
+      macros:
+        is_incremental: false
+    given:
+      - input: ref('stg_sales')
+        rows:
+          - order_id: ORD-TEST-01
+            customer_id: CUST-001
+            product_id: SKU-101
+            order_ts: "2025-03-10 10:00:00"
+            quantity: 3
+            unit_price_dollars: 25.00
+            discount_dollars: 5.00
+            gross_amount_dollars: 75.00
+            channel: web
+            store_id: STORE-01
+            loaded_at: "2025-03-10 10:00:00"
+          - order_id: ORD-TEST-02
+            customer_id: CUST-002
+            product_id: SKU-203
+            order_ts: "2025-06-01 09:00:00"
+            quantity: 1
+            unit_price_dollars: 90.00
+            discount_dollars: 0.00
+            gross_amount_dollars: 90.00
+            channel: mobile
+            store_id: STORE-02
+            loaded_at: "2025-06-01 09:00:00"
+      - input: ref('stg_products')
+        rows:
+          - product_id: SKU-101
+            sku: SKU-101
+            product_name: Classic Cotton Tee
+            category: apparel
+            subcategory: tops
+            list_price_dollars: 25.00
+            cost_dollars: 9.00
+            supplier_id: SUP-01
+            is_active: true
+          - product_id: SKU-203
+            sku: SKU-203
+            product_name: Running Shoes Pro
+            category: footwear
+            subcategory: athletic
+            list_price_dollars: 90.00
+            cost_dollars: 42.00
+            supplier_id: SUP-02
+            is_active: true
+      - input: ref('stg_customers')
+        rows:
+          - customer_id: CUST-001
+            first_name: Ava
+            last_name: Nguyen
+            email: ava.nguyen@example.com
+            signup_date: "2024-03-01"
+            country: US
+            loyalty_tier: gold
+          - customer_id: CUST-002
+            first_name: Liam
+            last_name: Patel
+            email: liam.patel@example.com
+            signup_date: "2024-05-17"
+            country: US
+            loyalty_tier: silver
+    expect:
+      rows:
+        - order_id: ORD-TEST-01
+          net_amount_dollars: 70.00
+          gross_margin_dollars: 43.00
+          fiscal_quarter: FY2026-Q1
+        - order_id: ORD-TEST-02
+          net_amount_dollars: 90.00
+          gross_margin_dollars: 48.00
+          fiscal_quarter: FY2026-Q2
+
+  - name: test_int_ga_sessions_cleaned_traffic_category
+    description: >
+      Verifies that traffic_category is correctly classified based on source,
+      medium, and campaign, and that is_bounced is set correctly.
+    model: int_ga_sessions_cleaned
+    given:
+      - input: ref('stg_ga_sessions')
+        rows:
+          - session_id: SES-T01
+            customer_id: CUST-001
+            session_start_ts: "2025-03-01 10:00:00"
+            source: google
+            medium: cpc
+            campaign: spring_sale
+            device_category: desktop
+            page_views: 5
+            session_duration_sec: 300
+            converted: true
+          - session_id: SES-T02
+            customer_id: null
+            session_start_ts: "2025-03-02 11:00:00"
+            source: google
+            medium: organic
+            campaign: "(not set)"
+            device_category: mobile
+            page_views: 1
+            session_duration_sec: 15
+            converted: false
+          - session_id: SES-T03
+            customer_id: CUST-002
+            session_start_ts: "2025-03-03 12:00:00"
+            source: direct
+            medium: none
+            campaign: "(not set)"
+            device_category: tablet
+            page_views: 3
+            session_duration_sec: 120
+            converted: false
+          - session_id: SES-T04
+            customer_id: CUST-003
+            session_start_ts: "2025-03-04 13:00:00"
+            source: newsletter
+            medium: email
+            campaign: spring_email
+            device_category: desktop
+            page_views: 4
+            session_duration_sec: 200
+            converted: true
+          - session_id: SES-T05
+            customer_id: null
+            session_start_ts: "2025-03-05 14:00:00"
+            source: partner_site
+            medium: referral
+            campaign: "(not set)"
+            device_category: mobile
+            page_views: 2
+            session_duration_sec: 80
+            converted: false
+    expect:
+      rows:
+        - session_id: SES-T01
+          traffic_category: paid
+          is_bounced: false
+        - session_id: SES-T02
+          traffic_category: organic
+          is_bounced: true
+        - session_id: SES-T03
+          traffic_category: direct
+          is_bounced: false
+        - session_id: SES-T04
+          traffic_category: email
+          is_bounced: false
+        - session_id: SES-T05
+          traffic_category: referral
+          is_bounced: false

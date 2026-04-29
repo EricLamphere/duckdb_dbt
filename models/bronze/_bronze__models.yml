@@ -1,0 +1,235 @@
+version: 2
+
+models:
+  - name: stg_sales
+    description: >
+      Staged sales transactions sourced from raw_sales. Prices are converted
+      from cents to dollars, channel is normalized to lowercase, and a
+      gross_amount_dollars column is derived. One row per order.
+    columns:
+      - name: order_id
+        description: "Unique identifier for each order."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Customer who placed the order."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: product_id
+        description: "Product included in the order."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: order_ts
+        description: "Timestamp when the order was placed (UTC)."
+        data_tests:
+          - not_null
+      - name: quantity
+        description: "Number of units ordered."
+        data_tests:
+          - not_null
+      - name: unit_price_dollars
+        description: "Unit price at time of order, in USD."
+        data_tests:
+          - not_null
+      - name: discount_dollars
+        description: "Discount applied to the entire order, in USD."
+      - name: gross_amount_dollars
+        description: "Total order value before discounts (quantity × unit_price_dollars)."
+        data_tests:
+          - not_null
+      - name: channel
+        description: "Normalized sales channel."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [web, mobile, store]
+      - name: store_id
+        description: "Store or fulfillment location identifier."
+        data_tests:
+          - not_null
+      - name: loaded_at
+        description: "Timestamp when this row was loaded into the warehouse."
+
+  - name: stg_products
+    description: >
+      Staged product catalog sourced from raw_products. Prices converted from
+      cents to dollars, category and subcategory normalized to lowercase,
+      is_active cast to boolean.
+    columns:
+      - name: product_id
+        description: "Unique product identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: sku
+        description: "Stock-keeping unit code."
+        data_tests:
+          - not_null
+      - name: product_name
+        description: "Human-readable product name."
+        data_tests:
+          - not_null
+      - name: category
+        description: "Normalized top-level product category (lowercase)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [apparel, footwear, electronics, accessories, sports]
+      - name: subcategory
+        description: "Normalized second-level product classification (lowercase)."
+        data_tests:
+          - not_null
+      - name: list_price_dollars
+        description: "Standard retail price in USD."
+        data_tests:
+          - not_null
+      - name: cost_dollars
+        description: "Unit cost to the retailer in USD."
+        data_tests:
+          - not_null
+      - name: supplier_id
+        description: "Vendor supplying this product."
+        data_tests:
+          - not_null
+      - name: is_active
+        description: "True if the product is currently available for sale."
+        data_tests:
+          - not_null
+
+  - name: stg_customers
+    description: >
+      Staged customer master data sourced from raw_customers. Emails are
+      normalized (lowercased and trimmed) via the normalize_email macro.
+      Names are trimmed, country is uppercased, loyalty_tier is lowercased.
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "Customer first name (trimmed)."
+        data_tests:
+          - not_null
+      - name: last_name
+        description: "Customer last name (trimmed)."
+        data_tests:
+          - not_null
+      - name: email
+        description: "Normalized email address (lowercased, trimmed)."
+        data_tests:
+          - not_null
+          - unique
+      - name: signup_date
+        description: "Date the customer created their account."
+        data_tests:
+          - not_null
+      - name: country
+        description: "ISO 3166-1 alpha-2 country code (uppercase)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [US, CA, UK, MX, AU]
+      - name: loyalty_tier
+        description: "Customer loyalty program tier (lowercase)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [bronze, silver, gold, platinum]
+
+  - name: stg_ga_sessions
+    description: >
+      Staged Google Analytics session data sourced from raw_ga_sessions.
+      Anonymous sessions have a null customer_id. Campaign is coalesced to
+      '(not set)' when absent. All string fields are lowercased.
+    columns:
+      - name: session_id
+        description: "Unique session identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Authenticated customer ID; null for anonymous sessions."
+      - name: session_start_ts
+        description: "Session start timestamp (UTC)."
+        data_tests:
+          - not_null
+      - name: source
+        description: "Traffic source (e.g., google, facebook, direct)."
+        data_tests:
+          - not_null
+      - name: medium
+        description: "Traffic medium (e.g., organic, cpc, email)."
+        data_tests:
+          - not_null
+      - name: campaign
+        description: "UTM campaign name; '(not set)' when no campaign was tagged."
+        data_tests:
+          - not_null
+      - name: device_category
+        description: "Device type used during the session."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [desktop, mobile, tablet]
+      - name: page_views
+        description: "Number of pages viewed in the session."
+        data_tests:
+          - not_null
+      - name: session_duration_sec
+        description: "Total session length in seconds."
+        data_tests:
+          - not_null
+      - name: converted
+        description: "True if the session resulted in a completed purchase."
+        data_tests:
+          - not_null
+
+  - name: stg_inventory
+    description: >
+      Staged inventory snapshots sourced from raw_inventory_snapshots.
+      Represents point-in-time stock levels per store and product, taken
+      monthly. is_below_reorder is derived from on_hand_units < reorder_point.
+    columns:
+      - name: snapshot_date
+        description: "Date the inventory count was recorded."
+        data_tests:
+          - not_null
+      - name: store_id
+        description: "Store location identifier."
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Product being counted."
+        data_tests:
+          - not_null
+      - name: on_hand_units
+        description: "Units physically in stock at time of snapshot."
+        data_tests:
+          - not_null
+      - name: reorder_point
+        description: "Level at which a reorder should be triggered."
+        data_tests:
+          - not_null
+      - name: safety_stock
+        description: "Minimum buffer stock to maintain."
+        data_tests:
+          - not_null
+      - name: is_below_reorder
+        description: "True when on_hand_units is below the reorder point."
+        data_tests:
+          - not_null
