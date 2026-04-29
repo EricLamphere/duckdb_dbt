@@ -1,0 +1,7 @@
+customer_id,first_name,last_name,email,signup_date,country,loyalty_tier
+CUST-001,Ava,Nguyen,Ava.Nguyen@Example.com ,2024-03-01,US,gold
+CUST-002,Liam,Patel,liam.patel@example.com,2024-05-17,US,silver
+CUST-003,Sofia,Garcia,SOFIA.GARCIA@example.com,2024-07-09,CA,bronze
+CUST-004,Noah,Kim,noah.kim@example.com,2024-11-02,US,silver
+CUST-005,Mia,Johnson,mia.johnson@example.com,2025-01-20,UK,bronze
+CUST-006,Ethan,Brown,ethan.brown@example.com,2025-02-14,US,bronze

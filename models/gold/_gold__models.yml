@@ -1,0 +1,184 @@
+version: 2
+
+models:
+  - name: mart_sales_analytics
+    description: >
+      Aggregated sales analytics mart at the (order_date, fiscal_quarter, channel,
+      category, price_tier) grain. Reports revenue, units, margin, and discount
+      metrics. Primary consumption layer for sales dashboards.
+    columns:
+      - name: order_date
+        description: "Calendar date of aggregated orders."
+        data_tests:
+          - not_null
+      - name: fiscal_quarter
+        description: "Fiscal quarter label (FY start = February)."
+        data_tests:
+          - not_null
+      - name: channel
+        description: "Sales channel."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [test, fail] # [web, mobile, store]
+      - name: category
+        description: "Product category."
+      - name: price_tier
+        description: "Product price tier (low, mid, high)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [low, mid, high]
+      - name: orders
+        description: "Count of distinct orders in this group."
+        data_tests:
+          - not_null
+      - name: units_sold
+        description: "Total units sold."
+        data_tests:
+          - not_null
+      - name: gross_revenue
+        description: "Total revenue before discounts in USD."
+        data_tests:
+          - not_null
+      - name: net_revenue
+        description: "Total revenue after discounts in USD."
+        data_tests:
+          - not_null
+      - name: gross_margin_dollars
+        description: "Net revenue minus total product cost."
+      - name: gross_margin_pct
+        description: "Gross margin as a fraction of net revenue (0–1)."
+      - name: avg_discount_pct
+        description: "Average discount as a fraction of gross revenue (0–1)."
+
+  - name: mart_inventory
+    description: >
+      Inventory status mart joining movement history with product dimensions.
+      Includes stockout risk flags and days-of-cover estimates. One row per
+      (snapshot_date, store_id, product_id).
+    columns:
+      - name: snapshot_date
+        description: "Date of the inventory snapshot."
+        data_tests:
+          - not_null
+      - name: store_id
+        description: "Store location."
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Product being tracked."
+        data_tests:
+          - not_null
+      - name: product_name
+        description: "Human-readable product name."
+      - name: category
+        description: "Product category."
+      - name: price_tier
+        description: "Product price tier."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [low, mid, high]
+      - name: on_hand_units
+        description: "Units physically in stock."
+        data_tests:
+          - not_null
+      - name: stockout_risk_flag
+        description: "True when on_hand_units is at or below safety_stock."
+        data_tests:
+          - not_null
+      - name: movement_type
+        description: "Direction of inventory change since last snapshot."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [initial, replenishment, sale_or_shrink, flat]
+      - name: days_of_cover
+        description: "Estimated days until stockout based on average daily sales."
+
+  - name: mart_web_analytics
+    description: >
+      Web analytics mart aggregated at the (session_date, traffic_category,
+      device_category) grain. Reports sessions, conversions, bounce rate, and
+      average session duration. Powers web performance dashboards.
+    columns:
+      - name: session_date
+        description: "Calendar date of aggregated sessions."
+        data_tests:
+          - not_null
+      - name: traffic_category
+        description: "Classified traffic source."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [paid, organic, email, direct, referral, other]
+      - name: device_category
+        description: "Device type."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [desktop, mobile, tablet]
+      - name: sessions
+        description: "Total session count."
+        data_tests:
+          - not_null
+      - name: conversions
+        description: "Sessions that resulted in a purchase."
+        data_tests:
+          - not_null
+      - name: conversion_rate
+        description: "Conversions / sessions (0–1)."
+      - name: bounce_rate
+        description: "Bounced sessions / sessions (0–1)."
+      - name: avg_session_duration_sec
+        description: "Average session length in seconds."
+
+  - name: mart_customer_360
+    description: >
+      Customer 360 view combining purchase history, loyalty data, and web session
+      behavior. One row per customer. Includes RFM recency, segment classification,
+      and a deterministic surrogate key.
+    columns:
+      - name: customer_sk
+        description: "MD5 surrogate key derived from customer_id."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Source customer identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: email
+        description: "Normalized customer email."
+        data_tests:
+          - not_null
+      - name: loyalty_tier
+        description: "Customer loyalty tier."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [bronze, silver, gold, platinum]
+      - name: orders_count
+        description: "Total orders placed."
+        data_tests:
+          - not_null
+      - name: lifetime_net_revenue
+        description: "Cumulative net revenue from this customer."
+        data_tests:
+          - not_null
+      - name: rfm_recency_days
+        description: "Days since last order (null for customers who have never ordered)."
+      - name: segment
+        description: "Customer segment classification."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [vip, loyal, regular, at_risk, new]

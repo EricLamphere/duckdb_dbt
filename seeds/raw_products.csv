@@ -1,0 +1,8 @@
+product_id,sku,product_name,category,subcategory,list_price_cents,cost_cents,supplier_id,is_active
+SKU-101,SKU-101,Classic Cotton Tee,apparel,tops,2499,900,SUP-01,true
+SKU-203,SKU-203,Running Shoes Pro,footwear,athletic,8999,4200,SUP-02,true
+SKU-310,SKU-310,Smart Home Hub,electronics,home,15999,8500,SUP-03,true
+SKU-415,SKU-415,Stainless Water Bottle,accessories,drinkware,4999,1500,SUP-01,true
+SKU-520,SKU-520,Wireless Earbuds,electronics,audio,12999,6000,SUP-03,true
+SKU-630,SKU-630,Yoga Mat Pro,sports,fitness,3999,1400,SUP-02,true
+SKU-999,SKU-999,Discontinued Hoodie,apparel,tops,5999,2500,SUP-01,false
