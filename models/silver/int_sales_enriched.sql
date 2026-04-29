@@ -26,17 +26,17 @@ select
     s.customer_id,
     s.product_id,
     s.order_ts,
-    cast(s.order_ts as date)                                                as order_date,
+    cast(s.order_ts as date) as order_date,
     s.quantity,
     s.unit_price_dollars,
     s.discount_dollars,
     s.gross_amount_dollars,
-    round(s.gross_amount_dollars - s.discount_dollars, 2)                   as net_amount_dollars,
+    round(s.gross_amount_dollars - s.discount_dollars, 2) as net_amount_dollars,
     round(
         (s.gross_amount_dollars - s.discount_dollars)
         - (s.quantity * p.cost_dollars),
         2
-    )                                                                       as gross_margin_dollars,
+    ) as gross_margin_dollars,
     s.channel,
     s.store_id,
     p.category,
@@ -45,8 +45,8 @@ select
     p.list_price_dollars,
     c.loyalty_tier,
     c.country,
-    ({{ fiscal_quarter('s.order_ts') }})                                    as fiscal_quarter,
-    {{ generate_surrogate_key(['s.order_id']) }}                            as sales_sk
+    ({{ fiscal_quarter('s.order_ts') }}) as fiscal_quarter,
+    {{ generate_surrogate_key(['s.order_id']) }} as sales_sk
 from sales s
 left join products p on s.product_id = p.product_id
 left join customers c on s.customer_id = c.customer_id
