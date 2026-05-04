@@ -16,52 +16,65 @@ models:
     columns:
       - name: sales_sk
         description: "MD5 surrogate key derived from order_id."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: order_id
         description: "Source order identifier."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: customer_id
         description: "Customer who placed the order."
+        data_type: varchar
         data_tests:
           - not_null
       - name: product_id
         description: "Product ordered."
+        data_type: varchar
         data_tests:
           - not_null
       - name: order_ts
         description: "Order timestamp (UTC)."
+        data_type: timestamp
         data_tests:
           - not_null
       - name: order_date
         description: "Calendar date of the order."
+        data_type: date
         data_tests:
           - not_null
       - name: quantity
         description: "Units ordered."
+        data_type: integer
         data_tests:
           - not_null
       - name: unit_price_dollars
         description: "Listed unit price in USD."
+        data_type: double
         data_tests:
           - not_null
       - name: discount_dollars
         description: "Total discount applied in USD."
+        data_type: double
       - name: gross_amount_dollars
         description: "Total pre-discount order value (quantity × unit_price_dollars)."
+        data_type: double
         data_tests:
           - not_null
       - name: net_amount_dollars
         description: "Order revenue after discount (gross_amount - discount)."
+        data_type: double
         data_tests:
           - not_null
       - name: gross_margin_dollars
         description: "Net revenue minus total product cost."
+        data_type: double
       - name: channel
         description: "Sales channel (web, mobile, store)."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -69,20 +82,30 @@ models:
                 values: [web, mobile, store]
       - name: store_id
         description: "Store identifier."
+        data_type: varchar
         data_tests:
           - not_null
       - name: category
         description: "Product category."
+        data_type: varchar
       - name: subcategory
         description: "Product subcategory."
+        data_type: varchar
       - name: cost_dollars
         description: "Unit cost at time of sale."
+        data_type: double
+      - name: list_price_dollars
+        description: "Standard retail price of the product in USD."
+        data_type: double
       - name: loyalty_tier
         description: "Customer loyalty tier at time of order."
+        data_type: varchar
       - name: country
         description: "Customer country."
+        data_type: varchar
       - name: fiscal_quarter
         description: "Fiscal quarter label (e.g., FY2025-Q2) based on February fiscal year start."
+        data_type: varchar
         data_tests:
           - not_null
 
@@ -99,15 +122,38 @@ models:
     columns:
       - name: customer_id
         description: "Unique customer identifier."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
+      - name: first_name
+        description: "Customer first name (trimmed)."
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: last_name
+        description: "Customer last name (trimmed)."
+        data_type: varchar
+        data_tests:
+          - not_null
       - name: email
         description: "Normalized customer email."
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: signup_date
+        description: "Date the customer created their account."
+        data_type: date
+        data_tests:
+          - not_null
+      - name: country
+        description: "ISO 3166-1 alpha-2 country code (uppercase)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: loyalty_tier
         description: "Customer loyalty tier."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -115,22 +161,28 @@ models:
                 values: [bronze, silver, gold, platinum]
       - name: orders_count
         description: "Total number of distinct orders placed by the customer."
+        data_type: bigint
         data_tests:
           - not_null
       - name: lifetime_net_revenue
         description: "Sum of net_amount_dollars across all orders."
+        data_type: double
         data_tests:
           - not_null
       - name: total_units_purchased
         description: "Total units purchased across all orders."
+        data_type: bigint
         data_tests:
           - not_null
       - name: first_order_date
         description: "Date of the customer's first order."
+        data_type: date
       - name: last_order_date
         description: "Date of the customer's most recent order."
+        data_type: date
       - name: avg_order_value
         description: "Average net order value (null for customers with zero orders)."
+        data_type: double
 
   - name: int_inventory_movements
     description: >
@@ -145,43 +197,56 @@ models:
     columns:
       - name: inventory_sk
         description: "MD5 surrogate key from (snapshot_date, store_id, product_id)."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: snapshot_date
         description: "Date of the inventory snapshot."
+        data_type: date
         data_tests:
           - not_null
       - name: store_id
         description: "Store location."
+        data_type: varchar
         data_tests:
           - not_null
       - name: product_id
         description: "Product being tracked."
+        data_type: varchar
         data_tests:
           - not_null
       - name: on_hand_units
         description: "Units in stock at snapshot date."
+        data_type: integer
         data_tests:
           - not_null
       - name: reorder_point
         description: "Level at which reorder should be triggered."
+        data_type: integer
         data_tests:
           - not_null
       - name: safety_stock
         description: "Minimum buffer stock."
+        data_type: integer
         data_tests:
           - not_null
       - name: is_below_reorder
         description: "True when on_hand_units < reorder_point."
+        data_type: boolean
         data_tests:
           - not_null
+      - name: prev_on_hand_units
+        description: "on_hand_units from the prior snapshot period for this store/product combination."
+        data_type: integer
       - name: unit_delta
         description: "Change in on_hand_units since the prior snapshot (0 for first record)."
+        data_type: integer
         data_tests:
           - not_null
       - name: movement_type
         description: "Classification of inventory change direction."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -200,23 +265,74 @@ models:
     columns:
       - name: session_id
         description: "Unique session identifier."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
+      - name: customer_id
+        description: "Authenticated customer ID; null for anonymous sessions."
+        data_type: varchar
+      - name: session_start_ts
+        description: "Session start timestamp (UTC)."
+        data_type: timestamp
+        data_tests:
+          - not_null
       - name: session_date
         description: "Calendar date of the session."
+        data_type: date
+        data_tests:
+          - not_null
+      - name: source
+        description: "Traffic source (e.g., google, facebook, direct)."
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: medium
+        description: "Traffic medium (e.g., organic, cpc, email)."
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: campaign
+        description: "UTM campaign name; '(not set)' when no campaign was tagged."
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: device_category
+        description: "Device type used during the session."
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [desktop, mobile, tablet]
+      - name: page_views
+        description: "Number of pages viewed in the session."
+        data_type: integer
+        data_tests:
+          - not_null
+      - name: session_duration_sec
+        description: "Total session length in seconds."
+        data_type: integer
+        data_tests:
+          - not_null
+      - name: converted
+        description: "True if the session resulted in a purchase."
+        data_type: boolean
         data_tests:
           - not_null
       - name: is_known_customer
         description: "True when customer_id is present (authenticated session)."
+        data_type: boolean
         data_tests:
           - not_null
       - name: is_bounced
         description: "True when page_views <= 1."
+        data_type: boolean
         data_tests:
           - not_null
       - name: session_duration_bucket
         description: "Bucketed session length (under_1m, 1_to_5m, over_5m)."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -224,15 +340,12 @@ models:
                 values: [under_1m, 1_to_5m, over_5m]
       - name: traffic_category
         description: "Classified traffic source (paid, organic, email, direct, referral, other)."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values: [paid, organic, email, direct, referral, other]
-      - name: converted
-        description: "True if the session resulted in a purchase."
-        data_tests:
-          - not_null
 
   - name: int_product_dimensions
     description: >
@@ -243,17 +356,34 @@ models:
     columns:
       - name: product_id
         description: "Unique product identifier."
+        data_type: varchar
+      - name: sku
+        description: "Stock-keeping unit code."
+        data_type: varchar
+      - name: product_name
+        description: "Human-readable product name."
+        data_type: varchar
       - name: category
         description: "Product category."
+        data_type: varchar
       - name: subcategory
         description: "Product subcategory."
+        data_type: varchar
       - name: list_price_dollars
         description: "Retail price in USD."
+        data_type: double
       - name: cost_dollars
         description: "Unit cost in USD."
-      - name: margin_dollars
-        description: "Gross margin per unit (list_price - cost)."
-      - name: price_tier
-        description: "Price bucket: low (<$25), mid ($25-$99), high (>=$100)."
+        data_type: double
+      - name: supplier_id
+        description: "Vendor supplying this product."
+        data_type: varchar
       - name: is_active
         description: "True if the product is currently available."
+        data_type: boolean
+      - name: margin_dollars
+        description: "Gross margin per unit (list_price - cost)."
+        data_type: double
+      - name: price_tier
+        description: "Price bucket: low (<$25), mid ($25-$99), high (>=$100)."
+        data_type: varchar
