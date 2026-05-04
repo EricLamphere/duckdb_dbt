@@ -6,33 +6,41 @@ seeds:
     columns:
       - name: order_id
         description: "Unique identifier for each order."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: customer_id
         description: "Foreign key to the customer who placed the order."
+        data_type: varchar
         data_tests:
           - not_null
       - name: product_id
         description: "Foreign key to the product ordered."
+        data_type: varchar
         data_tests:
           - not_null
       - name: order_ts
         description: "Timestamp when the order was placed (UTC)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: quantity
         description: "Number of units ordered."
+        data_type: integer
         data_tests:
           - not_null
       - name: unit_price_cents
         description: "Listed unit price at time of order, in cents."
+        data_type: integer
         data_tests:
           - not_null
       - name: discount_cents
         description: "Total discount applied to the order, in cents."
+        data_type: integer
       - name: channel
         description: "Sales channel through which the order was placed."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -40,6 +48,7 @@ seeds:
                 values: [web, mobile, store]
       - name: store_id
         description: "Identifier for the physical or logical store."
+        data_type: varchar
         data_tests:
           - not_null
 
@@ -48,19 +57,23 @@ seeds:
     columns:
       - name: product_id
         description: "Unique product identifier (same as SKU in this dataset)."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: sku
         description: "Stock-keeping unit code."
+        data_type: varchar
         data_tests:
           - not_null
       - name: product_name
         description: "Human-readable product name."
+        data_type: varchar
         data_tests:
           - not_null
       - name: category
         description: "Top-level product category."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -68,22 +81,27 @@ seeds:
                 values: [apparel, footwear, electronics, accessories, sports]
       - name: subcategory
         description: "Second-level product classification."
+        data_type: varchar
         data_tests:
           - not_null
       - name: list_price_cents
         description: "Standard retail price in cents."
+        data_type: integer
         data_tests:
           - not_null
       - name: cost_cents
         description: "Unit cost to the retailer in cents."
+        data_type: integer
         data_tests:
           - not_null
       - name: supplier_id
         description: "Identifier for the supplying vendor."
+        data_type: varchar
         data_tests:
           - not_null
       - name: is_active
         description: "Whether the product is currently available for sale."
+        data_type: varchar
         data_tests:
           - not_null
 
@@ -92,27 +110,33 @@ seeds:
     columns:
       - name: customer_id
         description: "Unique customer identifier."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: first_name
         description: "Customer first name."
+        data_type: varchar
         data_tests:
           - not_null
       - name: last_name
         description: "Customer last name."
+        data_type: varchar
         data_tests:
           - not_null
       - name: email
         description: "Customer email address (raw, may have casing/whitespace issues)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: signup_date
         description: "Date the customer created their account."
+        data_type: varchar
         data_tests:
           - not_null
       - name: country
         description: "ISO 3166-1 alpha-2 country code of the customer."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -120,6 +144,7 @@ seeds:
                 values: [US, CA, UK, MX, AU]
       - name: loyalty_tier
         description: "Customer loyalty program tier."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -131,27 +156,34 @@ seeds:
     columns:
       - name: session_id
         description: "Unique session identifier assigned by GA."
+        data_type: varchar
         data_tests:
           - unique
           - not_null
       - name: customer_id
         description: "Associated customer ID if the session was authenticated; null for anonymous visitors."
+        data_type: varchar
       - name: session_start_ts
         description: "Timestamp when the session began (UTC)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: source
         description: "Traffic source (e.g., google, facebook, direct)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: medium
         description: "Traffic medium (e.g., organic, cpc, email)."
+        data_type: varchar
         data_tests:
           - not_null
       - name: campaign
         description: "UTM campaign name, if applicable."
+        data_type: varchar
       - name: device_category
         description: "Device type used during the session."
+        data_type: varchar
         data_tests:
           - not_null
           - accepted_values:
@@ -159,14 +191,17 @@ seeds:
                 values: [desktop, mobile, tablet]
       - name: page_views
         description: "Number of pages viewed during the session."
+        data_type: integer
         data_tests:
           - not_null
       - name: session_duration_sec
         description: "Total session duration in seconds."
+        data_type: integer
         data_tests:
           - not_null
       - name: converted
         description: "Whether the session resulted in a purchase."
+        data_type: varchar
         data_tests:
           - not_null
 
@@ -175,25 +210,31 @@ seeds:
     columns:
       - name: snapshot_date
         description: "Date the inventory count was recorded."
+        data_type: varchar
         data_tests:
           - not_null
       - name: store_id
         description: "Store location identifier."
+        data_type: varchar
         data_tests:
           - not_null
       - name: product_id
         description: "Product being counted."
+        data_type: varchar
         data_tests:
           - not_null
       - name: on_hand_units
         description: "Units physically in stock at time of snapshot."
+        data_type: integer
         data_tests:
           - not_null
       - name: reorder_point
         description: "Inventory level at which a reorder should be triggered."
+        data_type: integer
         data_tests:
           - not_null
       - name: safety_stock
         description: "Minimum buffer stock to maintain."
+        data_type: integer
         data_tests:
           - not_null
