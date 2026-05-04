@@ -3,7 +3,7 @@ with
         select
             *
         from
-            {{ ref('raw_ga_sessions') }}
+            {{ source('raw', 'raw_ga_sessions') }}
     )
 select
     session_id,

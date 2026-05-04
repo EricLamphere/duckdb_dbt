@@ -1,0 +1,77 @@
+version: 2
+
+macros:
+  - name: cents_to_dollars
+    description: >
+      Converts an integer cent value to a decimal dollar amount by dividing by 100
+      and rounding to a configurable number of decimal places.
+    arguments:
+      - name: cents_column
+        type: column expression
+        description: >
+          The column or expression containing the integer cent value to convert
+          (e.g. `order_amount_cents`).
+      - name: precision
+        type: integer
+        description: >
+          Number of decimal places to round the result to. Defaults to 2.
+
+  - name: fiscal_quarter
+    description: >
+      Returns a fiscal quarter label (e.g. `FY2025-Q3`) for a given date column,
+      based on a configurable fiscal year start month. The fiscal year number
+      increments at the start month — e.g. with `fiscal_year_start_month=2`,
+      February 2024 begins FY2025.
+    arguments:
+      - name: date_column
+        type: column expression
+        description: >
+          The column or expression containing the date value to evaluate
+          (e.g. `order_date`). Must be a DATE or TIMESTAMP type.
+      - name: fiscal_year_start_month
+        type: integer
+        description: >
+          The calendar month number (1–12) on which the fiscal year begins.
+          Defaults to 2 (February).
+
+  - name: generate_surrogate_key
+    description: >
+      Generates an MD5-based surrogate key by concatenating the provided columns
+      with a `|` delimiter. NULL values are coerced to empty strings before
+      hashing so that NULLs do not cause the entire key to be NULL.
+    arguments:
+      - name: column_names
+        type: list of column names
+        description: >
+          An ordered list of column name strings whose values are combined to
+          form the key (e.g. `['order_id', 'line_item_id']`). Order matters —
+          changing the order produces a different hash.
+
+  - name: normalize_email
+    description: >
+      Normalizes an email address by trimming leading/trailing whitespace and
+      converting all characters to lowercase. Use this macro wherever email
+      values are compared or joined to ensure consistent matching.
+    arguments:
+      - name: email_column
+        type: column expression
+        description: >
+          The column or expression containing the raw email string to normalize
+          (e.g. `customer_email`).
+
+  - name: safe_divide
+    description: >
+      Divides the numerator by the denominator, returning NULL instead of
+      raising a division-by-zero error when the denominator is NULL or zero.
+      The denominator is cast to DOUBLE to ensure floating-point division.
+    arguments:
+      - name: numerator
+        type: column expression
+        description: >
+          The value or expression to use as the dividend
+          (e.g. `total_revenue`).
+      - name: denominator
+        type: column expression
+        description: >
+          The value or expression to use as the divisor. Returns NULL when
+          this is NULL or 0 (e.g. `order_count`).

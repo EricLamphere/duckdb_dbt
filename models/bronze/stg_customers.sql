@@ -3,7 +3,7 @@ with
         select
             *
         from
-            {{ ref('raw_customers') }}
+            {{ source('raw', 'raw_customers') }}
     )
 select
     customer_id,

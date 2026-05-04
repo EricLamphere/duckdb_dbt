@@ -1,0 +1,224 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw seed data loaded into DuckDB. Freshness is checked via dbt source freshness."
+    schema: main_raw
+
+    freshness:
+      warn_after: {count: 1, period: day}
+      error_after: {count: 3, period: day}
+
+    tables:
+      - name: raw_sales
+        description: "Raw sales transaction records loaded from source CSV extract."
+        loaded_at_field: order_ts
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 3, period: day}
+        columns:
+          - name: order_id
+            description: "Unique identifier for each order."
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: "Foreign key to the customer who placed the order."
+            data_tests:
+              - not_null
+          - name: product_id
+            description: "Foreign key to the product ordered."
+            data_tests:
+              - not_null
+          - name: order_ts
+            description: "Timestamp when the order was placed (UTC)."
+            data_tests:
+              - not_null
+          - name: quantity
+            description: "Number of units ordered."
+            data_tests:
+              - not_null
+          - name: unit_price_cents
+            description: "Listed unit price at time of order, in cents."
+            data_tests:
+              - not_null
+          - name: discount_cents
+            description: "Total discount applied to the order, in cents."
+          - name: channel
+            description: "Sales channel through which the order was placed."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [web, mobile, store]
+          - name: store_id
+            description: "Identifier for the physical or logical store."
+            data_tests:
+              - not_null
+
+      - name: raw_products
+        description: "Product catalog including pricing, category, and supplier metadata."
+        loaded_at_field: null
+        freshness: null
+        columns:
+          - name: product_id
+            description: "Unique product identifier."
+            data_tests:
+              - unique
+              - not_null
+          - name: sku
+            description: "Stock-keeping unit code."
+            data_tests:
+              - not_null
+          - name: product_name
+            description: "Human-readable product name."
+            data_tests:
+              - not_null
+          - name: category
+            description: "Top-level product category."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [apparel, footwear, electronics, accessories, sports]
+          - name: subcategory
+            description: "Second-level product classification."
+            data_tests:
+              - not_null
+          - name: list_price_cents
+            description: "Standard retail price in cents."
+            data_tests:
+              - not_null
+          - name: cost_cents
+            description: "Unit cost to the retailer in cents."
+            data_tests:
+              - not_null
+          - name: supplier_id
+            description: "Identifier for the supplying vendor."
+            data_tests:
+              - not_null
+          - name: is_active
+            description: "Whether the product is currently available for sale."
+            data_tests:
+              - not_null
+
+      - name: raw_customers
+        description: "Customer master data including contact info and loyalty tier."
+        loaded_at_field: null
+        freshness: null
+        columns:
+          - name: customer_id
+            description: "Unique customer identifier."
+            data_tests:
+              - unique
+              - not_null
+          - name: first_name
+            description: "Customer first name."
+            data_tests:
+              - not_null
+          - name: last_name
+            description: "Customer last name."
+            data_tests:
+              - not_null
+          - name: email
+            description: "Customer email address."
+            data_tests:
+              - not_null
+          - name: signup_date
+            description: "Date the customer created their account."
+            data_tests:
+              - not_null
+          - name: country
+            description: "ISO 3166-1 alpha-2 country code."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [US, CA, UK, MX, AU]
+          - name: loyalty_tier
+            description: "Customer loyalty program tier."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [bronze, silver, gold, platinum]
+
+      - name: raw_ga_sessions
+        description: "Google Analytics session data exported from GA4."
+        loaded_at_field: session_start_ts
+        freshness:
+          warn_after: {count: 800, period: day}
+          error_after: {count: 900, period: day}
+        columns:
+          - name: session_id
+            description: "Unique session identifier assigned by GA."
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: "Associated customer ID; null for anonymous visitors."
+          - name: session_start_ts
+            description: "Timestamp when the session began (UTC)."
+            data_tests:
+              - not_null
+          - name: source
+            description: "Traffic source (e.g., google, facebook, direct)."
+            data_tests:
+              - not_null
+          - name: medium
+            description: "Traffic medium (e.g., organic, cpc, email)."
+            data_tests:
+              - not_null
+          - name: campaign
+            description: "UTM campaign name, if applicable."
+          - name: device_category
+            description: "Device type used during the session."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [desktop, mobile, tablet]
+          - name: page_views
+            description: "Number of pages viewed during the session."
+            data_tests:
+              - not_null
+          - name: session_duration_sec
+            description: "Total session duration in seconds."
+            data_tests:
+              - not_null
+          - name: converted
+            description: "Whether the session resulted in a purchase."
+            data_tests:
+              - not_null
+
+      - name: raw_inventory_snapshots
+        description: "Point-in-time inventory snapshot per store and product, taken monthly."
+        loaded_at_field: "cast(snapshot_date as timestamp)"
+        freshness:
+          warn_after: {count: 32, period: day}
+          error_after: {count: 900, period: day}
+        columns:
+          - name: snapshot_date
+            description: "Date the inventory count was recorded."
+            data_tests:
+              - not_null
+          - name: store_id
+            description: "Store location identifier."
+            data_tests:
+              - not_null
+          - name: product_id
+            description: "Product being counted."
+            data_tests:
+              - not_null
+          - name: on_hand_units
+            description: "Units physically in stock at time of snapshot."
+            data_tests:
+              - not_null
+          - name: reorder_point
+            description: "Inventory level at which a reorder should be triggered."
+            data_tests:
+              - not_null
+          - name: safety_stock
+            description: "Minimum buffer stock to maintain."
+            data_tests:
+              - not_null
