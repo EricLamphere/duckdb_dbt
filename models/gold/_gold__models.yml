@@ -6,6 +6,11 @@ models:
       Aggregated sales analytics mart at the (order_date, fiscal_quarter, channel,
       category, price_tier) grain. Reports revenue, units, margin, and discount
       metrics. Primary consumption layer for sales dashboards.
+    meta:
+      freshness:
+        loaded_at_field: order_date
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: order_date
         description: "Calendar date of aggregated orders."
@@ -58,6 +63,11 @@ models:
       Inventory status mart joining movement history with product dimensions.
       Includes stockout risk flags and days-of-cover estimates. One row per
       (snapshot_date, store_id, product_id).
+    meta:
+      freshness:
+        loaded_at_field: snapshot_date
+        warn_after: {count: 32, period: day}
+        error_after: {count: 62, period: day}
     columns:
       - name: snapshot_date
         description: "Date of the inventory snapshot."
@@ -104,6 +114,11 @@ models:
       Web analytics mart aggregated at the (session_date, traffic_category,
       device_category) grain. Reports sessions, conversions, bounce rate, and
       average session duration. Powers web performance dashboards.
+    meta:
+      freshness:
+        loaded_at_field: session_date
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: session_date
         description: "Calendar date of aggregated sessions."
@@ -143,6 +158,11 @@ models:
       Customer 360 view combining purchase history, loyalty data, and web session
       behavior. One row per customer. Includes RFM recency, segment classification,
       and a deterministic surrogate key.
+    meta:
+      freshness:
+        loaded_at_field: last_order_date
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: customer_sk
         description: "MD5 surrogate key derived from customer_id."

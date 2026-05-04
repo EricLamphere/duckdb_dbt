@@ -8,6 +8,11 @@ models:
       Materialized as incremental using delete+insert on order_id.
     config:
       materialized: incremental
+    meta:
+      freshness:
+        loaded_at_field: order_ts
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: sales_sk
         description: "MD5 surrogate key derived from order_id."
@@ -86,6 +91,11 @@ models:
       Customer-grain aggregation combining stg_customers with order history
       from int_sales_enriched. Includes lifetime revenue, order count, and
       first/last order dates. Customers with no orders are retained via left join.
+    meta:
+      freshness:
+        loaded_at_field: last_order_date
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: customer_id
         description: "Unique customer identifier."
@@ -127,6 +137,11 @@ models:
       Inventory snapshot data enriched with movement direction using LAG window
       functions. Tracks unit changes period over period per store and product.
       Surrogate key is derived from snapshot_date, store_id, and product_id.
+    meta:
+      freshness:
+        loaded_at_field: snapshot_date
+        warn_after: {count: 32, period: day}
+        error_after: {count: 62, period: day}
     columns:
       - name: inventory_sk
         description: "MD5 surrogate key from (snapshot_date, store_id, product_id)."
@@ -177,6 +192,11 @@ models:
     description: >
       Cleaned and enriched GA session data. Adds traffic_category classification,
       bounce flag, session duration bucket, and known-customer indicator.
+    meta:
+      freshness:
+        loaded_at_field: session_date
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
     columns:
       - name: session_id
         description: "Unique session identifier."

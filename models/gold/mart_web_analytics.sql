@@ -9,7 +9,6 @@ select
     session_date,
     traffic_category,
     device_category,
-    '{{ env_var("STAGE", "UNSET") }}',
     count(session_id) as sessions,
     sum(
         case
