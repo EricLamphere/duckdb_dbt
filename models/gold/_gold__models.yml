@@ -21,11 +21,11 @@ models:
     data_type: date
     data_tests:
     - not_null
-  - name: fiscal_quarter
-    description: Fiscal quarter label (FY start = February).
-    data_type: varchar
-    data_tests:
-    - not_null
+  # - name: fiscal_quarter
+  #   description: Fiscal quarter label (FY start = February).
+  #   data_type: varchar
+  #   data_tests:
+  #   - not_null
   - name: channel
     description: Sales channel.
     data_type: varchar
@@ -78,6 +78,10 @@ models:
   - name: avg_discount_pct
     description: Average discount as a fraction of gross revenue (0–1).
     data_type: double
+  - name: my_new_column
+    description: Testing the schema drift feature
+    data_type: varchar
+
 - name: mart_inventory
   description: Inventory status mart joining movement history with product dimensions.
     Includes stockout risk flags and days-of-cover estimates. One row per (snapshot_date,
@@ -138,11 +142,11 @@ models:
     data_type: integer
     data_tests:
     - not_null
-  - name: is_below_reorder
-    description: True when on_hand_units is below the reorder point.
-    data_type: boolean
-    data_tests:
-    - not_null
+  # - name: is_below_reorder
+  #   description: True when on_hand_units is below the reorder point.
+  #   data_type: boolean
+  #   data_tests:
+  #   - not_null
   - name: stockout_risk_flag
     description: True when on_hand_units is at or below safety_stock.
     data_type: boolean
