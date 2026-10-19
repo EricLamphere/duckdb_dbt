@@ -1,0 +1,73 @@
+version: 2
+
+exposures:
+  - name: sales_performance_dashboard
+    type: dashboard
+    maturity: high
+    url: https://analytics.internal/dashboards/sales-performance
+    description: >
+      Executive sales dashboard tracking revenue, margin, and discount trends
+      by channel and category. Used weekly by the sales leadership team.
+    depends_on:
+      - ref('mart_sales_analytics')
+    owner:
+      name: Sales Analytics Team
+      email: sales-analytics@company.com
+
+  - name: inventory_reorder_report
+    type: ml
+    maturity: medium
+    url: https://analytics.internal/reports/inventory-reorder
+    description: >
+      Automated reorder recommendation report that flags SKUs below reorder
+      point and estimates days-of-cover. Runs nightly and feeds the supply
+      chain planning tool.
+    depends_on:
+      - ref('mart_inventory')
+    owner:
+      name: Supply Chain Team
+      email: supply-chain@company.com
+
+  - name: customer_lifecycle_dashboard
+    type: dashboard
+    maturity: high
+    url: https://analytics.internal/dashboards/customer-lifecycle
+    description: >
+      Customer 360 dashboard showing RFM segments, loyalty tier distribution,
+      and lifetime value trends. Used by the CRM and marketing teams for
+      campaign targeting.
+    depends_on:
+      - ref('mart_customer_360')
+    owner:
+      name: CRM Team
+      email: crm@company.com
+
+  - name: marketing_channel_analysis
+    type: notebook
+    maturity: medium
+    url: https://analytics.internal/notebooks/marketing-channel-analysis
+    description: >
+      Jupyter notebook comparing web traffic sources against conversion and
+      bounce rates. Used by the digital marketing team for budget allocation.
+    depends_on:
+      - ref('mart_web_analytics')
+      - ref('mart_sales_analytics')
+    owner:
+      name: Digital Marketing Team
+      email: digital-marketing@company.com
+
+  - name: executive_kpi_report
+    type: dashboard
+    maturity: high
+    url: https://analytics.internal/dashboards/executive-kpi
+    description: >
+      C-suite KPI rollup combining revenue performance, inventory health,
+      customer growth, and web engagement into a single weekly report.
+    depends_on:
+      - ref('mart_sales_analytics')
+      - ref('mart_inventory')
+      - ref('mart_customer_360')
+      - ref('mart_web_analytics')
+    owner:
+      name: Data Platform Team
+      email: data-platform@company.com
