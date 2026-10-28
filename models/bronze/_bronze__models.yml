@@ -67,6 +67,9 @@ models:
         data_type: varchar
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ["STORE-01", "STORE-02", "STORE-03"]
       - name: loaded_at
         description: "Timestamp when this row was loaded into the warehouse."
         data_type: timestamp
@@ -155,6 +158,8 @@ models:
         data_tests:
           - not_null
           - unique
+        tags:
+          - pii
       - name: signup_date
         description: "Date the customer created their account."
         data_type: date

@@ -254,11 +254,7 @@ models:
     description: Average session length in seconds.
     data_type: double
 - name: mart_customer_360
-  description: 'Customer 360 view combining purchase history, loyalty data, and web
-    session behavior. One row per customer. Includes RFM recency, segment classification,
-    and a deterministic surrogate key.
-
-    '
+  description: One row per customer. This model combines purchase history, loyalty data, and web session behavior to provide a comprehensive 360-degree view. It includes RFM recency calculations, deterministic surrogate keys, and a business logic-based segment classification.
   meta:
     freshness:
       loaded_at_field: last_order_date
@@ -270,44 +266,45 @@ models:
         period: day
   columns:
   - name: customer_sk
-    description: MD5 surrogate key derived from customer_id.
+    description: MD5 surrogate key derived from the customer's unique identifier.
     data_type: varchar
     data_tests:
     - unique
     - not_null
   - name: customer_id
-    description: Source customer identifier.
+    description: Unique identifier for the customer from the source system.
     data_type: varchar
     data_tests:
     - unique
     - not_null
   - name: first_name
-    description: Customer first name (trimmed).
+    description: Customer's first name, trimmed of whitespace.
     data_type: varchar
     data_tests:
     - not_null
   - name: last_name
-    description: Customer last name (trimmed).
+    description: Customer's last name, trimmed of whitespace.
     data_type: varchar
     data_tests:
     - not_null
   - name: email
-    description: Normalized customer email.
+    description: Normalized email address associated with the customer account.
     data_type: varchar
     data_tests:
     - not_null
+    tags: [pii]
   - name: signup_date
-    description: Date the customer created their account.
+    description: Date when the customer first created their account.
     data_type: date
     data_tests:
     - not_null
   - name: country
-    description: ISO 3166-1 alpha-2 country code (uppercase).
+    description: Two-letter ISO 3166-1 alpha-2 country code in uppercase.
     data_type: varchar
     data_tests:
     - not_null
   - name: loyalty_tier
-    description: Customer loyalty tier.
+    description: Current loyalty tier assigned to the customer based on activity.
     data_type: varchar
     data_tests:
     - not_null
@@ -319,31 +316,31 @@ models:
           - gold
           - platinum
   - name: orders_count
-    description: Total orders placed.
+    description: Total number of distinct orders placed by the customer.
     data_type: bigint
     data_tests:
     - not_null
   - name: lifetime_net_revenue
-    description: Cumulative net revenue from this customer.
+    description: Cumulative net revenue generated from all customer orders.
     data_type: double
     data_tests:
     - not_null
   - name: total_units_purchased
-    description: Total units purchased across all orders.
+    description: Aggregate count of units purchased across all orders.
     data_type: bigint
     data_tests:
     - not_null
   - name: first_order_date
-    description: Date of the customer's first order.
+    description: Date of the customer's initial purchase order.
     data_type: date
   - name: last_order_date
-    description: Date of the customer's most recent order.
+    description: Date of the customer's most recent purchase order.
     data_type: date
   - name: avg_order_value
-    description: Average net order value (null for customers with zero orders).
+    description: Average net value per order, null if no orders exist.
     data_type: double
   - name: total_sessions
-    description: Total web sessions attributed to this customer.
+    description: Total count of web sessions attributed to the customer.
     data_type: bigint
     data_tests:
     - not_null
@@ -351,13 +348,13 @@ models:
     description: Date of the customer's most recent web session.
     data_type: date
   - name: top_traffic_category
-    description: Most frequent traffic source category across all sessions.
+    description: Most frequent traffic source category from web sessions.
     data_type: varchar
   - name: rfm_recency_days
-    description: Days since last order (null for customers who have never ordered).
+    description: Days elapsed since the last order, null for non-buyers.
     data_type: integer
   - name: segment
-    description: Customer segment classification.
+    description: Customer segment classification derived from loyalty, revenue, and order history.
     data_type: varchar
     data_tests:
     - not_null
