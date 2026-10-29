@@ -1,0 +1,72 @@
+version: 1
+title: Executive Overview
+period:
+  current: last_12_months
+  compare: previous_period
+grain: auto
+canvas_width: 1500
+widgets:
+- id: avg_discount
+  type: summary
+  width: 33.86
+  height: 200
+  metrics:
+  - avg_discount
+- id: gross_revenue
+  type: summary
+  width: 33.07
+  height: 200
+  metrics:
+  - gross_revenue
+- id: summary_2
+  type: summary
+  width: 33.07
+  height: 200
+  metrics:
+  - gross_margin
+- id: orders_count
+  type: summary
+  width: 50.0
+  height: 248
+  metrics:
+  - orders_count
+  - customer_lifetime_revenue
+  - conversion_rate
+- id: summary
+  type: summary
+  width: 50.0
+  height: 248
+  metrics:
+  - discounts
+  - units_sold
+  - revenue
+- id: bounce_rate
+  type: bar
+  width: 43.34
+  height: 400
+  metrics:
+  - bounce_rate
+  options:
+    dimension: session__device_category
+    orientation: horizontal
+    stack_by: customer__loyalty_tier
+- id: leaderboard
+  type: leaderboard
+  width: 56.66
+  height: 400
+  metrics:
+  - web_revenue
+  options:
+    dimension: order__subcategory
+- id: table
+  type: table
+  width: 100.0
+  height: 400
+  metrics:
+  - customer_lifetime_revenue
+  options:
+    dimensions:
+    - customer__first_name
+    - customer__last_name
+    - customer__loyalty_tier
+    compare_columns: false

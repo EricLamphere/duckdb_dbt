@@ -366,3 +366,47 @@ models:
           - regular
           - at_risk
           - new
+
+semantic_models:
+- name: mart_sales
+  description: A semantic model aggregating sales performance by time, channel, category, and price tier to drive dashboard insights.
+  model: ref('mart_sales_analytics')
+  defaults:
+    agg_time_dimension: order_date
+  primary_entity: sales_analytic
+  dimensions:
+  - name: order_date
+    type: time
+    type_params:
+      time_granularity: day
+  - name: fiscal_quarter
+    type: categorical
+  - name: channel
+    type: categorical
+  - name: category
+    type: categorical
+  - name: price_tier
+    type: categorical
+  measures:
+  - name: gross_margin_dollars
+    description: Total gross margin in USD.
+    agg: sum
+    expr: gross_margin_dollars
+  - name: avg_discount_pct
+    description: Average discount percentage applied to orders.
+    agg: average
+    expr: avg_discount_pct
+
+metrics:
+- name: total_gross_margin
+  label: Total Gross Margin
+  description: The total dollar value of gross margin generated.
+  type: simple
+  type_params:
+    measure: gross_margin_dollars
+- name: avg_discount
+  label: Average Discount
+  description: The average discount percentage applied to orders.
+  type: simple
+  type_params:
+    measure: avg_discount_pct

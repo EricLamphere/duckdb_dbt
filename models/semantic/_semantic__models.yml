@@ -1,0 +1,163 @@
+version: 2
+
+semantic_models:
+  - name: orders
+    description: One row per order line, with revenue, margin and discounts in dollars.
+    model: ref('int_sales_enriched')
+    defaults:
+      agg_time_dimension: order_date
+    entities:
+      - name: order
+        type: primary
+        expr: order_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+      - name: product
+        type: foreign
+        expr: product_id
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: store_id
+        type: categorical
+      - name: category
+        type: categorical
+      - name: subcategory
+        type: categorical
+      - name: fiscal_quarter
+        type: categorical
+    measures:
+      - name: net_revenue
+        description: Revenue after discounts.
+        agg: sum
+        expr: net_amount_dollars
+      - name: gross_revenue
+        agg: sum
+        expr: gross_amount_dollars
+      - name: gross_margin
+        agg: sum
+        expr: gross_margin_dollars
+      - name: discounts
+        agg: sum
+        expr: discount_dollars
+      - name: units_sold
+        agg: sum
+        expr: quantity
+      - name: order_count
+        agg: count_distinct
+        expr: order_id
+      - name: buyers
+        agg: count_distinct
+        expr: customer_id
+
+  - name: customers
+    description: One row per customer, with lifetime value and segment.
+    model: ref('mart_customer_360')
+    defaults:
+      agg_time_dimension: signup_date
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_id
+    dimensions:
+      - name: signup_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: country
+        type: categorical
+      - name: loyalty_tier
+        type: categorical
+      - name: segment
+        type: categorical
+      - name: top_traffic_category
+        type: categorical
+    measures:
+      - name: customer_count
+        agg: count_distinct
+        expr: customer_id
+      - name: lifetime_net_revenue
+        agg: sum
+        expr: lifetime_net_revenue
+
+  - name: web_sessions
+    description: One row per Google Analytics session.
+    model: ref('int_ga_sessions_cleaned')
+    defaults:
+      agg_time_dimension: session_date
+    entities:
+      - name: session
+        type: primary
+        expr: session_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+    dimensions:
+      - name: session_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: traffic_category
+        type: categorical
+      - name: device_category
+        type: categorical
+      - name: source
+        type: categorical
+      - name: medium
+        type: categorical
+      - name: is_known_customer
+        type: categorical
+    measures:
+      - name: sessions
+        agg: count_distinct
+        expr: session_id
+      - name: conversions
+        agg: sum
+        expr: case when converted then 1 else 0 end
+      - name: bounces
+        agg: sum
+        expr: case when is_bounced then 1 else 0 end
+      - name: total_session_seconds
+        agg: sum
+        expr: session_duration_sec
+
+  - name: inventory_snapshots
+    description: Stock on hand per store and product per snapshot date.
+    model: ref('mart_inventory')
+    defaults:
+      agg_time_dimension: snapshot_date
+    entities:
+      - name: inventory_position
+        type: primary
+        expr: store_id || '-' || product_id || '-' || cast(snapshot_date as varchar)
+      - name: product
+        type: foreign
+        expr: product_id
+    dimensions:
+      - name: snapshot_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: store_id
+        type: categorical
+      - name: movement_type
+        type: categorical
+    measures:
+      - name: on_hand_units
+        description: Units on hand at the latest snapshot in the period (not summed across dates).
+        agg: sum
+        expr: on_hand_units
+        non_additive_dimension:
+          name: snapshot_date
+          window_choice: max
+      - name: positions_below_reorder
+        agg: sum
+        expr: case when is_below_reorder then 1 else 0 end
+        non_additive_dimension:
+          name: snapshot_date
+          window_choice: max

@@ -1,0 +1,198 @@
+version: 2
+
+metrics:
+  # ── Sales ──────────────────────────────────────────────────────────────────
+  - name: revenue
+    label: Revenue
+    description: Net revenue after discounts.
+    type: simple
+    type_params:
+      measure: net_revenue
+
+  - name: gross_revenue
+    label: Gross revenue
+    type: simple
+    type_params:
+      measure: gross_revenue
+
+  - name: gross_margin
+    label: Gross margin
+    type: simple
+    type_params:
+      measure: gross_margin
+
+  - name: discounts
+    label: Discounts
+    type: simple
+    type_params:
+      measure: discounts
+
+  - name: units_sold
+    label: Units sold
+    type: simple
+    type_params:
+      measure: units_sold
+
+  - name: orders
+    label: Orders
+    type: simple
+    type_params:
+      measure: order_count
+
+  - name: buyers
+    label: Buyers
+    description: Distinct customers who ordered.
+    type: simple
+    type_params:
+      measure: buyers
+
+  - name: web_revenue
+    label: Web revenue
+    type: simple
+    type_params:
+      measure: net_revenue
+    filter: "{{ Dimension('order__channel') }} = 'web'"
+
+  - name: average_order_value
+    label: Average order value
+    type: ratio
+    type_params:
+      numerator: revenue
+      denominator: orders
+
+  - name: gross_margin_pct
+    label: Gross margin %
+    type: ratio
+    type_params:
+      numerator: gross_margin
+      denominator: revenue
+
+  - name: discount_rate
+    label: Discount rate
+    type: ratio
+    type_params:
+      numerator: discounts
+      denominator: gross_revenue
+
+  - name: revenue_per_buyer
+    label: Revenue per buyer
+    type: derived
+    type_params:
+      expr: revenue / buyers
+      metrics:
+        - name: revenue
+        - name: buyers
+
+  - name: revenue_growth_wow
+    label: Revenue growth (week over week)
+    description: Change in revenue vs. the same period a week earlier.
+    type: derived
+    type_params:
+      expr: (revenue - revenue_last_week) / nullif(revenue_last_week, 0)
+      metrics:
+        - name: revenue
+        - name: revenue
+          offset_window: 7 days
+          alias: revenue_last_week
+
+  - name: cumulative_revenue
+    label: Cumulative revenue
+    description: Running total of revenue; by week or month, the total at the end of the period.
+    type: cumulative
+    type_params:
+      measure: net_revenue
+      cumulative_type_params:
+        period_agg: last
+
+  - name: revenue_mtd
+    label: Revenue month to date
+    type: cumulative
+    type_params:
+      measure: net_revenue
+      cumulative_type_params:
+        grain_to_date: month
+        period_agg: last
+
+  # ── Customers ──────────────────────────────────────────────────────────────
+  - name: customers
+    label: Customers
+    type: simple
+    type_params:
+      measure: customer_count
+
+  - name: customer_lifetime_revenue
+    label: Customer lifetime revenue
+    type: simple
+    type_params:
+      measure: lifetime_net_revenue
+
+  # ── Web ────────────────────────────────────────────────────────────────────
+  - name: sessions
+    label: Sessions
+    type: simple
+    type_params:
+      measure: sessions
+
+  - name: conversions
+    label: Conversions
+    type: simple
+    type_params:
+      measure: conversions
+
+  - name: conversion_rate
+    label: Conversion rate
+    type: ratio
+    type_params:
+      numerator: conversions
+      denominator: sessions
+
+  - name: bounce_rate
+    label: Bounce rate
+    type: ratio
+    type_params:
+      numerator:
+        name: bounces
+      denominator: sessions
+
+  - name: bounces
+    label: Bounces
+    type: simple
+    type_params:
+      measure: bounces
+
+  # ── Inventory ──────────────────────────────────────────────────────────────
+  - name: on_hand_units
+    label: Units on hand
+    type: simple
+    type_params:
+      measure: on_hand_units
+
+  - name: positions_below_reorder
+    label: Positions below reorder point
+    type: simple
+    type_params:
+      measure: positions_below_reorder
+
+saved_queries:
+  - name: weekly_revenue_by_channel
+    label: Weekly revenue by channel
+    query_params:
+      metrics: [revenue, orders, average_order_value]
+      group_by:
+        - TimeDimension('metric_time', 'week')
+        - Dimension('order__channel')
+
+  - name: daily_web_funnel
+    label: Daily web funnel
+    query_params:
+      metrics: [sessions, conversions, conversion_rate, bounce_rate]
+      group_by:
+        - TimeDimension('metric_time', 'day')
+        - Dimension('session__traffic_category')
+
+  - name: revenue_by_loyalty_tier
+    label: Revenue by loyalty tier
+    query_params:
+      metrics: [revenue, buyers, revenue_per_buyer]
+      group_by:
+        - Dimension('customer__loyalty_tier')
