@@ -1,10 +1,12 @@
 version: 1
 title: Executive Overview
 period:
-  current: last_12_months
+  current:
+    start: '2026-10-01'
+    end: '2026-10-31'
   compare: previous_period
 grain: auto
-canvas_width: 1500
+canvas_width: 1100
 widgets:
 - id: avg_discount
   type: summary
@@ -70,3 +72,26 @@ widgets:
     - customer__last_name
     - customer__loyalty_tier
     compare_columns: false
+    limit: 10
+- id: sessions
+  type: timeseries
+  width: 50.0
+  height: 300
+  metrics:
+  - sessions
+  - conversions
+  - conversion_rate
+  - bounce_rate
+  options:
+    grain: day
+    split_by: session__traffic_category
+- id: revenue
+  type: bar
+  width: 50.0
+  height: 300
+  metrics:
+  - revenue
+  - buyers
+  - revenue_per_buyer
+  options:
+    dimension: customer__loyalty_tier

@@ -135,6 +135,9 @@ models:
       Staged customer master data sourced from raw_customers. Emails are
       normalized (lowercased and trimmed) via the normalize_email macro.
       Names are trimmed, country is uppercased, loyalty_tier is lowercased.
+    config:
+      contract:
+        enforced: true
     columns:
       - name: customer_id
         description: "Unique customer identifier."

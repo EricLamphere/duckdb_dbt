@@ -255,6 +255,9 @@ models:
     data_type: double
 - name: mart_customer_360
   description: One row per customer. This model combines purchase history, loyalty data, and web session behavior to provide a comprehensive 360-degree view. It includes RFM recency calculations, deterministic surrogate keys, and a business logic-based segment classification.
+  config:
+    contract:
+      enforced: true
   meta:
     freshness:
       loaded_at_field: last_order_date
@@ -327,7 +330,7 @@ models:
     - not_null
   - name: total_units_purchased
     description: Aggregate count of units purchased across all orders.
-    data_type: bigint
+    data_type: hugeint
     data_tests:
     - not_null
   - name: first_order_date
