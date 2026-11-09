@@ -1,0 +1,352 @@
+# Exported from wickd (Executive Overview)
+title: Executive Overview
+text: Exported from the wickd dashboard **Executive Overview** for 2026-10-01 – 2026-10-31 (fixed dates).
+queries:
+  avg_discount: |-
+    SELECT
+      AVG(avg_discount_pct) AS avg_discount
+    FROM {{ ref('mart_sales_analytics') }} mart_sales_src_10000
+    WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+  gross_revenue: |-
+    SELECT
+      SUM(gross_amount_dollars) AS gross_revenue
+    FROM {{ ref('int_sales_enriched') }} orders_src_10000
+    WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+  summary_2: |-
+    SELECT
+      SUM(gross_margin_dollars) AS gross_margin
+    FROM {{ ref('int_sales_enriched') }} orders_src_10000
+    WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+  orders_count: |-
+    SELECT
+      MAX(subq_6.orders_count) AS orders_count
+      , MAX(subq_13.customer_lifetime_revenue) AS customer_lifetime_revenue
+      , MAX(subq_21.conversion_rate) AS conversion_rate
+    FROM (
+      SELECT
+        SUM(orders_count) AS orders_count
+      FROM {{ ref('int_customer_orders') }} customer_orders_src_10000
+      WHERE DATE_TRUNC('day', first_order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+    ) subq_6
+    CROSS JOIN (
+      SELECT
+        SUM(lifetime_net_revenue) AS customer_lifetime_revenue
+      FROM {{ ref('mart_customer_360') }} customers_src_10000
+      WHERE DATE_TRUNC('day', signup_date) BETWEEN '2026-10-01' AND '2026-10-31'
+    ) subq_13
+    CROSS JOIN (
+      SELECT
+        CAST(SUM(case when converted then 1 else 0 end) AS DOUBLE) / CAST(NULLIF(COUNT(DISTINCT session_id), 0) AS DOUBLE) AS conversion_rate
+      FROM {{ ref('int_ga_sessions_cleaned') }} web_sessions_src_10000
+      WHERE DATE_TRUNC('day', session_date) BETWEEN '2026-10-01' AND '2026-10-31'
+    ) subq_21
+  summary: |-
+    SELECT
+      SUM(discount_dollars) AS discounts
+      , SUM(quantity) AS units_sold
+      , SUM(net_amount_dollars) AS revenue
+    FROM {{ ref('int_sales_enriched') }} orders_src_10000
+    WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+  bounce_rate: |-
+    SELECT COALESCE(customer__loyalty_tier, 'Unknown') AS customer__loyalty_tier, session__device_category, bounce_rate
+    FROM (
+      SELECT
+        session__device_category
+        , customer__loyalty_tier
+        , CAST(bounces AS DOUBLE) / CAST(NULLIF(sessions, 0) AS DOUBLE) AS bounce_rate
+      FROM (
+        SELECT
+          subq_2.session__device_category AS session__device_category
+          , customers_src_10000.loyalty_tier AS customer__loyalty_tier
+          , SUM(subq_2.__bounces) AS bounces
+          , COUNT(DISTINCT subq_2.__sessions) AS sessions
+        FROM (
+          SELECT
+            customer_id AS customer
+            , device_category AS session__device_category
+            , session_id AS __sessions
+            , case when is_bounced then 1 else 0 end AS __bounces
+          FROM {{ ref('int_ga_sessions_cleaned') }} web_sessions_src_10000
+          WHERE DATE_TRUNC('day', session_date) BETWEEN '2026-10-01' AND '2026-10-31'
+        ) subq_2
+        LEFT OUTER JOIN
+          {{ ref('mart_customer_360') }} customers_src_10000
+        ON
+          subq_2.customer = customers_src_10000.customer_id
+        GROUP BY
+          subq_2.session__device_category
+          , customers_src_10000.loyalty_tier
+      ) subq_10
+    ) AS wickd_q
+  leaderboard: |-
+    SELECT
+      order__subcategory
+      , SUM(web_revenue) AS web_revenue
+    FROM (
+      SELECT
+        channel AS order__channel
+        , subcategory AS order__subcategory
+        , net_amount_dollars AS web_revenue
+      FROM {{ ref('int_sales_enriched') }} orders_src_10000
+      WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+    ) subq_3
+    WHERE order__channel = 'web'
+    GROUP BY
+      order__subcategory
+    ORDER BY web_revenue DESC
+    LIMIT 10
+  table: |-
+    SELECT
+      subq_2.customer__loyalty_tier AS customer__loyalty_tier
+      , customer_orders_src_10000.first_name AS customer__first_name
+      , customer_orders_src_10000.last_name AS customer__last_name
+      , SUM(subq_2.__customer_lifetime_revenue) AS customer_lifetime_revenue
+    FROM (
+      SELECT
+        customer_id AS customer
+        , loyalty_tier AS customer__loyalty_tier
+        , lifetime_net_revenue AS __customer_lifetime_revenue
+      FROM {{ ref('mart_customer_360') }} customers_src_10000
+      WHERE DATE_TRUNC('day', signup_date) BETWEEN '2026-10-01' AND '2026-10-31'
+    ) subq_2
+    LEFT OUTER JOIN
+      {{ ref('int_customer_orders') }} customer_orders_src_10000
+    ON
+      subq_2.customer = customer_orders_src_10000.customer_id
+    GROUP BY
+      subq_2.customer__loyalty_tier
+      , customer_orders_src_10000.first_name
+      , customer_orders_src_10000.last_name
+    ORDER BY customer_lifetime_revenue DESC
+    LIMIT 10
+  sessions: "SELECT COALESCE(session__traffic_category, 'Unknown') AS session__traffic_category, metric_time__day, sessions,\
+    \ conversions, conversion_rate, bounce_rate\nFROM (\n  WITH sma_10006_cte AS (\n    SELECT\n      DATE_TRUNC('day', session_date)\
+    \ AS metric_time__day\n      , traffic_category AS session__traffic_category\n      , session_id AS __sessions\n     \
+    \ , case when converted then 1 else 0 end AS __conversions\n      , case when is_bounced then 1 else 0 end AS __bounces\n\
+    \    FROM {{ ref('int_ga_sessions_cleaned') }} web_sessions_src_10000\n  )\n  \n  SELECT\n    COALESCE(subq_6.metric_time__day,\
+    \ subq_12.metric_time__day) AS metric_time__day\n    , COALESCE(subq_6.session__traffic_category, subq_12.session__traffic_category)\
+    \ AS session__traffic_category\n    , MAX(subq_6.sessions) AS sessions\n    , MAX(subq_6.conversions) AS conversions\n\
+    \    , MAX(CAST(subq_12.conversions AS DOUBLE) / CAST(NULLIF(subq_12.sessions, 0) AS DOUBLE)) AS conversion_rate\n   \
+    \ , MAX(CAST(subq_12.bounces AS DOUBLE) / CAST(NULLIF(subq_12.sessions, 0) AS DOUBLE)) AS bounce_rate\n  FROM (\n    SELECT\n\
+    \      metric_time__day\n      , session__traffic_category\n      , COUNT(DISTINCT __sessions) AS sessions\n      , SUM(__conversions)\
+    \ AS conversions\n    FROM sma_10006_cte\n    WHERE metric_time__day BETWEEN '2026-10-01' AND '2026-10-31'\n    GROUP\
+    \ BY\n      metric_time__day\n      , session__traffic_category\n  ) subq_6\n  FULL OUTER JOIN (\n    SELECT\n      metric_time__day\n\
+    \      , session__traffic_category\n      , SUM(__conversions) AS conversions\n      , COUNT(DISTINCT __sessions) AS sessions\n\
+    \      , SUM(__bounces) AS bounces\n    FROM sma_10006_cte\n    WHERE metric_time__day BETWEEN '2026-10-01' AND '2026-10-31'\n\
+    \    GROUP BY\n      metric_time__day\n      , session__traffic_category\n  ) subq_12\n  ON\n    (\n      subq_6.session__traffic_category\
+    \ = subq_12.session__traffic_category\n    ) AND (\n      subq_6.metric_time__day = subq_12.metric_time__day\n    )\n\
+    \  GROUP BY\n    COALESCE(subq_6.metric_time__day, subq_12.metric_time__day)\n    , COALESCE(subq_6.session__traffic_category,\
+    \ subq_12.session__traffic_category)\n) AS wickd_q"
+  revenue: |-
+    WITH cm_5_cte AS (
+      SELECT
+        customers_src_10000.loyalty_tier AS customer__loyalty_tier
+        , SUM(subq_2.__revenue) AS revenue
+        , COUNT(DISTINCT subq_2.__buyers) AS buyers
+      FROM (
+        SELECT
+          customer_id AS customer
+          , net_amount_dollars AS __revenue
+          , customer_id AS __buyers
+        FROM {{ ref('int_sales_enriched') }} orders_src_10000
+        WHERE DATE_TRUNC('day', order_date) BETWEEN '2026-10-01' AND '2026-10-31'
+      ) subq_2
+      LEFT OUTER JOIN
+        {{ ref('mart_customer_360') }} customers_src_10000
+      ON
+        subq_2.customer = customers_src_10000.customer_id
+      GROUP BY
+        customers_src_10000.loyalty_tier
+    )
+
+    SELECT
+      COALESCE(cm_5_cte.customer__loyalty_tier, subq_12.customer__loyalty_tier) AS customer__loyalty_tier
+      , MAX(cm_5_cte.revenue) AS revenue
+      , MAX(cm_5_cte.buyers) AS buyers
+      , MAX(subq_12.revenue_per_buyer) AS revenue_per_buyer
+    FROM cm_5_cte
+    FULL OUTER JOIN (
+      SELECT
+        customer__loyalty_tier
+        , revenue / buyers AS revenue_per_buyer
+      FROM (
+        SELECT
+          customer__loyalty_tier
+          , revenue
+          , buyers
+        FROM cm_5_cte
+      ) subq_11
+    ) subq_12
+    ON
+      cm_5_cte.customer__loyalty_tier = subq_12.customer__loyalty_tier
+    GROUP BY
+      COALESCE(cm_5_cte.customer__loyalty_tier, subq_12.customer__loyalty_tier)
+    ORDER BY revenue DESC
+    LIMIT 10
+charts:
+  avg_discount:
+    type: kpi
+    query: avg_discount
+    value: avg_discount
+    label: Avg discount
+    style:
+      value:
+        format: compact
+  gross_revenue:
+    type: kpi
+    query: gross_revenue
+    value: gross_revenue
+    label: Gross revenue
+    style:
+      value:
+        format: compact
+  summary_2:
+    type: kpi
+    query: summary_2
+    value: gross_margin
+    label: Gross margin
+    style:
+      value:
+        format: compact
+  orders_count_orders_count:
+    type: kpi
+    query: orders_count
+    value: orders_count
+    label: Orders count
+    style:
+      value:
+        format: compact
+  orders_count_customer_lifetime_revenue:
+    type: kpi
+    query: orders_count
+    value: customer_lifetime_revenue
+    label: Customer lifetime revenue
+    style:
+      value:
+        format: compact
+  orders_count_conversion_rate:
+    type: kpi
+    query: orders_count
+    value: conversion_rate
+    label: Conversion rate
+    style:
+      value:
+        format: compact
+  summary_discounts:
+    type: kpi
+    query: summary
+    value: discounts
+    label: Discounts
+    style:
+      value:
+        format: compact
+  summary_units_sold:
+    type: kpi
+    query: summary
+    value: units_sold
+    label: Units sold
+    style:
+      value:
+        format: compact
+  summary_revenue:
+    type: kpi
+    query: summary
+    value: revenue
+    label: Revenue
+    style:
+      value:
+        format: compact
+  bounce_rate:
+    title: Bounce rate
+    query: bounce_rate
+    type: bar
+    x: session__device_category
+    y: bounce_rate
+    x_label: Device category
+    y_label: Bounce rate
+    color: customer__loyalty_tier
+    style:
+      orientation: horizontal
+      stack: zero
+    sort:
+      by: bounce_rate
+      order: desc
+  leaderboard:
+    title: Web revenue
+    query: leaderboard
+    type: bar
+    x: order__subcategory
+    y: web_revenue
+    x_label: Subcategory
+    y_label: Web revenue
+    style:
+      orientation: horizontal
+    sort:
+      by: web_revenue
+      order: desc
+  table:
+    title: Customer lifetime revenue
+    query: table
+    type: table
+  sessions:
+    title: Sessions, Conversions, Conversion rate, Bounce rate
+    query: sessions
+    type: line
+    x: metric_time__day
+    x_label: Date
+    y: sessions
+    color: session__traffic_category
+    y_label: Sessions
+  revenue:
+    title: Revenue, Buyers, Revenue per buyer
+    query: revenue
+    type: bar
+    x: customer__loyalty_tier
+    y:
+    - revenue
+    - buyers
+    - revenue_per_buyer
+    x_label: Loyalty tier
+    y_label: Value
+    style:
+      orientation: vertical
+    sort:
+      by: revenue
+      order: desc
+rows:
+- cols:
+  - width: 33.86%
+    rows:
+    - avg_discount
+  - width: 33.07%
+    rows:
+    - gross_revenue
+  - width: 33.07%
+    rows:
+    - summary_2
+- cols:
+  - width: 50%
+    cols:
+    - orders_count_orders_count
+    - orders_count_customer_lifetime_revenue
+    - orders_count_conversion_rate
+  - width: 50%
+    cols:
+    - summary_discounts
+    - summary_units_sold
+    - summary_revenue
+- cols:
+  - width: 43.34%
+    rows:
+    - bounce_rate
+  - width: 56.66%
+    rows:
+    - leaderboard
+- table
+- cols:
+  - width: 50%
+    rows:
+    - sessions
+  - width: 50%
+    rows:
+    - revenue

@@ -1,0 +1,73 @@
+title: Inventory health
+text: Stock position from mart_inventory on its latest snapshot date.
+
+queries:
+  latest: |
+    with latest as (select max(snapshot_date) as d from {{ ref('mart_inventory') }})
+    select i.* from {{ ref('mart_inventory') }} i, latest where i.snapshot_date = latest.d
+  totals: |
+    with latest as (select max(snapshot_date) as d from {{ ref('mart_inventory') }})
+    select
+      sum(on_hand_units) as on_hand_units,
+      count(*) filter (where is_below_reorder) as below_reorder,
+      count(*) filter (where stockout_risk_flag) as stockout_risk
+    from {{ ref('mart_inventory') }} i, latest
+    where i.snapshot_date = latest.d
+  cover_by_category: |
+    with latest as (select max(snapshot_date) as d from {{ ref('mart_inventory') }})
+    select category, median(days_of_cover) as days_of_cover
+    from {{ ref('mart_inventory') }} i, latest
+    where i.snapshot_date = latest.d and days_of_cover is not null
+    group by 1
+    order by 2
+  at_risk: |
+    with latest as (select max(snapshot_date) as d from {{ ref('mart_inventory') }})
+    select store_id, product_name, category, on_hand_units, reorder_point, days_of_cover
+    from {{ ref('mart_inventory') }} i, latest
+    where i.snapshot_date = latest.d
+    order by days_of_cover nulls first
+    limit 15
+
+charts:
+  units_kpi:
+    type: kpi
+    query: totals
+    value: on_hand_units
+    label: Units on hand
+    style: {value: {format: compact}}
+  reorder_kpi:
+    type: kpi
+    query: totals
+    value: below_reorder
+    label: Store × product below reorder point
+    style: {value: {format: integer}}
+  risk_kpi:
+    type: kpi
+    query: totals
+    value: stockout_risk
+    label: Stockout risks
+    style: {value: {format: integer}}
+  cover:
+    type: bar
+    title: Median days of cover by category
+    query: cover_by_category
+    x: category
+    y: days_of_cover
+    x_label: Category
+    y_label: Days of cover
+  at_risk_table:
+    type: table
+    title: 15 store × product lines with the least cover
+    query: at_risk
+    style:
+      columns:
+        store_id: {label: Store}
+        product_name: {label: Product}
+        category: {label: Category}
+        on_hand_units: {label: On hand, format: integer}
+        reorder_point: {label: Reorder point, format: integer}
+        days_of_cover: {label: Days of cover, format: number}
+
+rows:
+  - cols: [units_kpi, reorder_kpi, risk_kpi]
+  - cols: [cover, at_risk_table]

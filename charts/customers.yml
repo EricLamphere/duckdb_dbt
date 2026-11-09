@@ -1,0 +1,99 @@
+title: Customers
+text: Segments, loyalty and the most valuable customers from mart_customer_360.
+
+queries:
+  totals: |
+    select
+      count(*) as customers,
+      sum(lifetime_net_revenue) / nullif(count(*), 0) as revenue_per_customer,
+      avg(orders_count) as orders_per_customer
+    from {{ ref('mart_customer_360') }}
+  segments: |
+    select coalesce(segment, 'Unknown') as segment, count(*) as customers
+    from {{ ref('mart_customer_360') }}
+    group by 1
+    order by 2 desc
+  tiers: |
+    select coalesce(loyalty_tier, 'Unknown') as loyalty_tier, sum(lifetime_net_revenue) as revenue
+    from {{ ref('mart_customer_360') }}
+    group by 1
+    order by 2 desc
+  signups: |
+    select date_trunc('month', signup_date) as month, count(*) as customers
+    from {{ ref('mart_customer_360') }}
+    group by 1
+    order by 1
+  top_customers: |
+    select
+      first_name || ' ' || last_name as customer,
+      country,
+      loyalty_tier,
+      orders_count,
+      lifetime_net_revenue,
+      last_order_date
+    from {{ ref('mart_customer_360') }}
+    order by lifetime_net_revenue desc nulls last
+    limit 15
+
+charts:
+  customers_kpi:
+    type: kpi
+    query: totals
+    value: customers
+    label: Customers
+    style: {value: {format: integer}}
+  rpc_kpi:
+    type: kpi
+    query: totals
+    value: revenue_per_customer
+    label: Lifetime revenue per customer
+    style: {value: {format: currency}}
+  opc_kpi:
+    type: kpi
+    query: totals
+    value: orders_per_customer
+    label: Orders per customer
+    style: {value: {format: number}}
+  segment_mix:
+    type: donut
+    title: Customers by segment
+    query: segments
+    theta: customers
+    color: segment
+  tier_revenue:
+    type: bar
+    title: Lifetime revenue by loyalty tier
+    query: tiers
+    x: loyalty_tier
+    y: revenue
+    x_label: Loyalty tier
+    y_label: Lifetime revenue
+    style:
+      orientation: horizontal
+      axis_y: {labels: {format: currency_compact}}
+  signup_trend:
+    type: line
+    title: New customers by signup month
+    query: signups
+    x: month
+    y: customers
+    x_label: Signup month
+    y_label: Customers
+  top_table:
+    type: table
+    title: Top 15 customers by lifetime revenue
+    query: top_customers
+    style:
+      columns:
+        customer: {label: Customer}
+        country: {label: Country}
+        loyalty_tier: {label: Tier}
+        orders_count: {label: Orders, format: integer}
+        lifetime_net_revenue: {label: Lifetime revenue, format: currency}
+        last_order_date: {label: Last order}
+
+rows:
+  - cols: [customers_kpi, rpc_kpi, opc_kpi]
+  - cols: [segment_mix, tier_revenue]
+  - signup_trend
+  - top_table

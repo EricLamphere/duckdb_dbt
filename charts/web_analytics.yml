@@ -1,0 +1,110 @@
+title: Web analytics
+text: Sessions, conversion and bounce from mart_web_analytics. Pick traffic channels to filter every chart (Live mode).
+
+variables:
+  channels:
+    input: multiselect
+    label: Traffic channel
+    options:
+      query: channel_list
+
+queries:
+  channel_list: |
+    select distinct traffic_category from {{ ref('mart_web_analytics') }} order by 1
+  totals: |
+    select
+      sum(sessions) as sessions,
+      sum(conversions) as conversions,
+      sum(conversions) / nullif(sum(sessions), 0) as conversion_rate,
+      sum(bounced_sessions) / nullif(sum(sessions), 0) as bounce_rate
+    from {{ ref('mart_web_analytics') }}
+    where {{ filter('traffic_category', channels) }}
+  weekly: |
+    select date_trunc('week', session_date) as week, traffic_category, sum(sessions) as sessions
+    from {{ ref('mart_web_analytics') }}
+    where {{ filter('traffic_category', channels) }}
+    group by 1, 2
+    order by 1
+  by_device: |
+    select
+      device_category,
+      sum(conversions) / nullif(sum(sessions), 0) as conversion_rate
+    from {{ ref('mart_web_analytics') }}
+    where {{ filter('traffic_category', channels) }}
+    group by 1
+    order by 2 desc
+  channel_table: |
+    select
+      traffic_category,
+      sum(sessions) as sessions,
+      sum(conversions) as conversions,
+      sum(conversions) / nullif(sum(sessions), 0) as conversion_rate,
+      sum(bounced_sessions) / nullif(sum(sessions), 0) as bounce_rate,
+      avg(avg_session_duration_sec) as avg_duration
+    from {{ ref('mart_web_analytics') }}
+    where {{ filter('traffic_category', channels) }}
+    group by 1
+    order by 2 desc
+
+charts:
+  sessions_kpi:
+    type: kpi
+    query: totals
+    value: sessions
+    label: Sessions
+    style: {value: {format: compact}}
+  conversions_kpi:
+    type: kpi
+    query: totals
+    value: conversions
+    label: Conversions
+    style: {value: {format: compact}}
+  conversion_kpi:
+    type: kpi
+    query: totals
+    value: conversion_rate
+    label: Conversion rate (conversions ÷ sessions)
+    style: {value: {format: percent}}
+  bounce_kpi:
+    type: kpi
+    query: totals
+    value: bounce_rate
+    label: Bounce rate (bounced ÷ sessions)
+    style: {value: {format: percent}}
+  sessions_trend:
+    type: area
+    title: Weekly sessions by traffic channel
+    query: weekly
+    x: week
+    y: sessions
+    color: traffic_category
+    x_label: Week
+    y_label: Sessions
+    style: {stack: zero}
+  device_conversion:
+    type: bar
+    title: Conversion rate by device
+    query: by_device
+    x: device_category
+    y: conversion_rate
+    x_label: Device
+    y_label: Conversion rate
+    style:
+      axis_y: {labels: {format: percent}}
+  channels:
+    type: table
+    title: Channels
+    query: channel_table
+    style:
+      columns:
+        traffic_category: {label: Channel}
+        sessions: {label: Sessions, format: integer}
+        conversions: {label: Conversions, format: integer}
+        conversion_rate: {label: Conversion rate, format: percent}
+        bounce_rate: {label: Bounce rate, format: percent}
+        avg_duration: {label: Avg. session, format: duration}
+
+rows:
+  - cols: [sessions_kpi, conversions_kpi, conversion_kpi, bounce_kpi]
+  - sessions_trend
+  - cols: [device_conversion, channels]

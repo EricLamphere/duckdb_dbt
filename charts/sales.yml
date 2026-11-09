@@ -1,0 +1,77 @@
+title: Sales overview
+text: Net revenue and margin from mart_sales_analytics
+
+queries:
+  totals: |
+    select
+      sum(net_revenue) as net_revenue,
+      sum(orders) as orders,
+      sum(gross_margin_dollars) / nullif(sum(net_revenue), 0) as margin_pct
+    from {{ ref('mart_sales_analytics') }}
+  monthly: |
+    select date_trunc('month', order_date) as month, channel, sum(net_revenue) as net_revenue
+    from {{ ref('mart_sales_analytics') }}
+    group by 1, 2
+    order by 1
+  by_category: |
+    select category, sum(net_revenue) as net_revenue
+    from {{ ref('mart_sales_analytics') }}
+    group by 1
+    order by 2 desc
+
+charts:
+  revenue_kpi:
+    type: kpi
+    query: totals
+    value: net_revenue
+    label: Net revenue
+    style:
+      value:
+        format: currency_compact
+  orders_kpi:
+    type: kpi
+    query: totals
+    value: orders
+    label: Orders
+    style:
+      value:
+        format: compact
+  margin_kpi:
+    type: kpi
+    query: totals
+    value: margin_pct
+    label: Gross margin
+    style:
+      value:
+        format: percent
+  revenue_trend:
+    type: line
+    title: Net revenue by month and channel
+    query: monthly
+    x: month
+    y: net_revenue
+    color: channel
+    y_label: Net revenue
+    style:
+      axis_y:
+        labels:
+          format: currency_compact
+  category_bar:
+    type: bar
+    title: Net revenue by category
+    query: by_category
+    x: category
+    y: net_revenue
+    y_label: Net revenue
+    style:
+      axis_y:
+        labels:
+          format: currency_compact
+    sort:
+      by: net_revenue
+      order: desc
+
+rows:
+  - cols: [revenue_kpi, orders_kpi, margin_kpi]
+  - revenue_trend
+  - category_bar
